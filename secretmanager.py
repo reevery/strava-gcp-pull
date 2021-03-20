@@ -16,9 +16,11 @@ class SecretManager:
         self._expires_at = None
 
     def _get_secret(self, name):
-        return self.client.access_secret_version(
-            f"projects/{os.getenv('GCP_PROJECT')}/secrets/{name}/"
-            f"versions/latest").payload.data.decode('utf-8')
+        _name = f"projects/{os.getenv('GCP_PROJECT')}/secrets/{name}/" \
+                f"versions/latest"
+        return self.client.access_secret_version(request={
+            'name': _name
+        }).payload.data.decode('utf-8')
 
     @property
     def client_id(self):
@@ -62,7 +64,9 @@ class SecretManager:
         self._access_token = value['access_token']
         self._refresh_token = value['refresh_token']
         self._expires_at = value['expires_at']
-        self.client.add_secret_version(
-            self.client.secret_path(
-                {os.getenv('GCP_PROJECT')}, 'STRAVA_ACCESS_TOKEN'),
-            {'data': json.dumps(value).encode('utf-8')})
+
+        parent = self.client.secret_path(os.getenv('GCP_PROJECT'), 'STRAVA_ACCESS_TOKEN')
+        self.client.add_secret_version(request={
+            "parent": parent,
+            "payload": {"data": json.dumps(value).encode('utf-8')}
+        })
